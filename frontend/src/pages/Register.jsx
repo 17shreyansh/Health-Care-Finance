@@ -1,0 +1,241 @@
+import React, { useState } from 'react';
+import { Form, Input, Button, Card, Typography, Upload, App } from 'antd';
+import { UserOutlined, PhoneOutlined, UploadOutlined, IdcardOutlined, LockOutlined } from '@ant-design/icons';
+import { authAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+
+const { Title } = Typography;
+
+const Register = () => {
+  const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
+  const [fileList, setFileList] = useState([]);
+  const navigate = useNavigate();
+  const { message } = App.useApp();
+
+  const compressImage = (file, maxWidth = 300, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        canvas.width = maxWidth;
+        canvas.height = (img.height * maxWidth) / img.width;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const onFinish = async (values) => {
+    if (fileList.length === 0) {
+      message.error('Please upload a profile image');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const base64Image = await compressImage(fileList[0].originFileObj);
+      const payload = {
+        ...values,
+        profileImage: base64Image
+      };
+      
+      const response = await authAPI.register(payload);
+      message.success('Registration successful! Please login with your credentials.');
+      form.resetFields();
+      setFileList([]);
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 
+                      error.response?.data?.errors?.[0]?.msg || 
+                      'Registration failed';
+      message.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpload = ({ fileList }) => {
+    setFileList(fileList);
+  };
+
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('You can only upload image files!');
+      return false;
+    }
+    return false; // Prevent auto upload - no size limit
+  };
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      background: '#fafafa',
+      padding: '20px'
+    }}>
+      <Card style={{ 
+        width: 480, 
+        background: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid #f0f0f0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Title level={2} style={{ color: '#262626', fontWeight: 600, marginBottom: 8 }}>Create Account</Title>
+          <Typography.Text type="secondary" style={{ fontSize: '14px' }}>Join our health credit system</Typography.Text>
+        </div>
+        
+        <Form form={form} onFinish={onFinish} layout="vertical">
+          <Form.Item
+            name="fullName"
+            label="Full Name"
+            rules={[{ required: true, message: 'Please input your full name!' }]}
+          >
+            <Input 
+              prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Enter your full name" 
+              size="large"
+              style={{ borderRadius: '8px' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="fatherName"
+            label="Father's Name"
+            rules={[{ required: true, message: "Please input your father's name!" }]}
+          >
+            <Input 
+              prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Enter father's name" 
+              size="large"
+              style={{ borderRadius: '8px' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="mobileNumber"
+            label="Mobile Number"
+            rules={[
+              { required: true, message: 'Please input your mobile number!' },
+              { pattern: /^[0-9]{10}$/, message: 'Please enter a valid 10-digit mobile number!' },
+              { len: 10, message: 'Mobile number must be exactly 10 digits!' }
+            ]}
+          >
+            <Input 
+              prefix={<PhoneOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Enter 10-digit mobile number" 
+              size="large"
+              style={{ borderRadius: '8px' }}
+              maxLength={10}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="employeeId"
+            label="Employee ID (Referral Code)"
+            rules={[
+              { required: true, message: 'Please input the employee ID!' },
+              { min: 3, message: 'Employee ID must be at least 3 characters!' }
+            ]}
+            extra="Use EMP001 or EMP002 for testing"
+          >
+            <Input 
+              prefix={<IdcardOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Enter employee ID" 
+              size="large"
+              style={{ borderRadius: '8px' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[
+              { required: true, message: 'Please input your password!' },
+              { min: 6, message: 'Password must be at least 6 characters!' }
+            ]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Create a password" 
+              size="large"
+              style={{ borderRadius: '8px' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Profile Image"
+            rules={[{ required: true, message: 'Please upload your profile image!' }]}
+          >
+            <Upload
+              listType="picture"
+              fileList={fileList}
+              onChange={handleUpload}
+              beforeUpload={beforeUpload}
+              maxCount={1}
+              customRequest={({ onSuccess }) => {
+                setTimeout(() => {
+                  onSuccess("ok");
+                }, 0);
+              }}
+            >
+              <Button 
+                icon={<UploadOutlined />} 
+                style={{ 
+                  borderRadius: '8px',
+                  border: '1px dashed #d9d9d9',
+                  color: '#595959'
+                }}
+              >
+                Upload Profile Image
+              </Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item>
+            <Button 
+              type="primary" 
+              htmlType="submit" 
+              loading={loading}
+              size="large"
+              block
+              style={{
+                borderRadius: '8px',
+                background: '#1890ff',
+                borderColor: '#1890ff',
+                height: '44px',
+                fontWeight: 500
+              }}
+            >
+              Create Account
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <Typography.Text type="secondary" style={{ fontSize: '14px' }}>
+            Already have an account?{' '}
+            <Button 
+              type="link" 
+              onClick={() => navigate('/login')}
+              style={{ padding: 0, fontSize: '14px', fontWeight: 500 }}
+            >
+              Sign in
+            </Button>
+          </Typography.Text>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+export default Register;
