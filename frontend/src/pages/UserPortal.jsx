@@ -115,7 +115,7 @@ const UserPortal = () => {
           </motion.div>
         )}
 
-        <motion.div
+        {/* <motion.div
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
@@ -141,7 +141,7 @@ const UserPortal = () => {
           >
             Download Card
           </Button>
-        </motion.div>
+        </motion.div> */}
       </div>
     </div>
   );
