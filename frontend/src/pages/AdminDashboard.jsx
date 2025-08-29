@@ -28,13 +28,24 @@ const AdminDashboard = () => {
     try {
       if (activeTab === 'employees') {
         const response = await adminAPI.getEmployees();
-        setEmployees(response.data);
+        // Handle both paginated and direct array responses
+        const employeeData = response.data.employees || response.data;
+        setEmployees(Array.isArray(employeeData) ? employeeData : []);
       } else {
         const response = await adminAPI.getUsers();
-        setUsers(response.data);
+        // Handle both paginated and direct array responses
+        const userData = response.data.users || response.data;
+        setUsers(Array.isArray(userData) ? userData : []);
       }
     } catch (error) {
-      message.error('Failed to fetch data');
+      console.error('Fetch data error:', error);
+      message.error(error.response?.data?.message || 'Failed to fetch data');
+      // Set empty arrays on error to prevent crashes
+      if (activeTab === 'employees') {
+        setEmployees([]);
+      } else {
+        setUsers([]);
+      }
     } finally {
       setLoading(false);
     }

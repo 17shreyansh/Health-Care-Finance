@@ -15,20 +15,30 @@ const auth = async (req, res, next) => {
     let user;
 
     if (decoded.role === 'admin') {
-      user = await Admin.findById(decoded.id);
+      user = await Admin.findById(decoded.id).select('-password');
     } else if (decoded.role === 'employee') {
-      user = await Employee.findById(decoded.id);
+      user = await Employee.findById(decoded.id).select('-password');
     } else {
       user = await User.findById(decoded.id);
     }
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid token.' });
+      console.log(`User not found for token with ID: ${decoded.id}, role: ${decoded.role}`);
+      return res.status(401).json({ message: 'Invalid token - user not found.' });
+    }
+
+    // Add role to user object if not present
+    if (!user.role) {
+      user.role = decoded.role;
     }
 
     req.user = user;
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error.message);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired.' });
+    }
     res.status(401).json({ message: 'Invalid token.' });
   }
 };
