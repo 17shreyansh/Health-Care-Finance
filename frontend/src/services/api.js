@@ -15,10 +15,12 @@ export const authAPI = {
 };
 
 export const adminAPI = {
-  getEmployees: () => api.get('/admin/employees'),
+  getDashboard: () => api.get('/admin/dashboard'),
+  getHealth: () => api.get('/admin/health'),
+  getEmployees: (params) => api.get('/admin/employees', { params }),
   createEmployee: (data) => api.post('/admin/employees', data),
   deleteEmployee: (id) => api.delete(`/admin/employees/${id}`),
-  getUsers: () => api.get('/admin/users'),
+  getUsers: (params) => api.get('/admin/users', { params }),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
 };
 

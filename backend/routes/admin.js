@@ -7,11 +7,122 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all employees
+// Dashboard analytics
+router.get('/dashboard', auth, authorize('admin'), async (req, res) => {
+  try {
+    const totalEmployees = await Employee.countDocuments();
+    const totalUsers = await User.countDocuments();
+    const activeEmployees = await Employee.countDocuments({ status: { $ne: 'inactive' } });
+    
+    // Recent registrations (last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentUsers = await User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } });
+    
+    // Top performing employees
+    const topEmployees = await Employee.aggregate([
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: 'employeeId',
+          as: 'referrals'
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          employeeId: 1,
+          referralCount: { $size: '$referrals' }
+        }
+      },
+      { $sort: { referralCount: -1 } },
+      { $limit: 5 }
+    ]);
+    
+    // Monthly registration stats
+    const monthlyStats = await User.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.year': -1, '_id.month': -1 } },
+      { $limit: 12 }
+    ]);
+    
+    res.json({
+      overview: {
+        totalEmployees,
+        totalUsers,
+        activeEmployees,
+        recentUsers
+      },
+      topEmployees,
+      monthlyStats
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// System health check
+router.get('/health', auth, authorize('admin'), async (req, res) => {
+  try {
+    const dbStatus = 'connected'; // You can add actual DB health check
+    const serverUptime = process.uptime();
+    const memoryUsage = process.memoryUsage();
+    
+    res.json({
+      status: 'healthy',
+      database: dbStatus,
+      uptime: Math.floor(serverUptime / 3600) + ' hours',
+      memory: {
+        used: Math.round(memoryUsage.heapUsed / 1024 / 1024) + ' MB',
+        total: Math.round(memoryUsage.heapTotal / 1024 / 1024) + ' MB'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Health check failed' });
+  }
+});
+
+// Get all employees with pagination and search
 router.get('/employees', auth, authorize('admin'), async (req, res) => {
   try {
-    const employees = await Employee.find().populate('referrals');
-    res.json(employees);
+    const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const skip = (page - 1) * limit;
+    
+    const searchQuery = search ? {
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { employeeId: { $regex: search, $options: 'i' } }
+      ]
+    } : {};
+    
+    const employees = await Employee.find(searchQuery)
+      .populate('referrals')
+      .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+      
+    const total = await Employee.countDocuments(searchQuery);
+    
+    res.json({
+      employees,
+      pagination: {
+        current: parseInt(page),
+        pageSize: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -42,11 +153,37 @@ router.post('/employees', auth, authorize('admin'), [
   }
 });
 
-// Get all users
+// Get all users with pagination and search
 router.get('/users', auth, authorize('admin'), async (req, res) => {
   try {
-    const users = await User.find();
-    res.json(users);
+    const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const skip = (page - 1) * limit;
+    
+    const searchQuery = search ? {
+      $or: [
+        { fullName: { $regex: search, $options: 'i' } },
+        { mobileNumber: { $regex: search, $options: 'i' } },
+        { userId: { $regex: search, $options: 'i' } },
+        { employeeId: { $regex: search, $options: 'i' } }
+      ]
+    } : {};
+    
+    const users = await User.find(searchQuery)
+      .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+      
+    const total = await User.countDocuments(searchQuery);
+    
+    res.json({
+      users,
+      pagination: {
+        current: parseInt(page),
+        pageSize: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
