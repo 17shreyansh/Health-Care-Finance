@@ -42,7 +42,7 @@ const UserPortal = () => {
 
   return (
     <div style={{ 
-      height: '100vh', 
+      minHeight: '100vh', 
       background: '#fafbfc',
       display: 'flex',
       flexDirection: 'column'
@@ -54,31 +54,44 @@ const UserPortal = () => {
         style={{
           background: '#ffffff',
           borderBottom: '1px solid #e8e8e8',
-          padding: '20px 32px',
+          padding: window.innerWidth <= 576 ? '16px 12px' : window.innerWidth <= 768 ? '18px 20px' : '20px 32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          flexWrap: 'wrap',
+          gap: window.innerWidth <= 576 ? '8px' : '0'
         }}
       >
-        <div>
-          <Title level={3} style={{ color: '#262626', margin: 0, fontWeight: 700 }}>Health Portal</Title>
-          <Text style={{ color: '#8c8c8c', fontSize: '14px' }}>Welcome back, {userProfile?.fullName}</Text>
+        <div style={{ flex: window.innerWidth <= 576 ? '1 1 100%' : 'auto', textAlign: window.innerWidth <= 576 ? 'center' : 'left' }}>
+          <Title level={3} style={{ 
+            color: '#262626', 
+            margin: 0, 
+            fontWeight: 700,
+            fontSize: window.innerWidth <= 576 ? '18px' : window.innerWidth <= 768 ? '20px' : '24px'
+          }}>Health Portal</Title>
+          <Text style={{ 
+            color: '#8c8c8c', 
+            fontSize: window.innerWidth <= 576 ? '12px' : '14px',
+            display: 'block'
+          }}>Welcome back, {userProfile?.fullName}</Text>
         </div>
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button 
             icon={<FiLogOut />} 
             onClick={logout}
+            size={window.innerWidth <= 576 ? 'small' : 'middle'}
             style={{ 
               borderRadius: '10px',
               border: '1px solid #e8e8e8',
               color: '#595959',
-              height: '40px',
-              paddingLeft: '16px',
-              paddingRight: '16px'
+              height: window.innerWidth <= 576 ? '32px' : '40px',
+              paddingLeft: window.innerWidth <= 576 ? '12px' : '16px',
+              paddingRight: window.innerWidth <= 576 ? '12px' : '16px',
+              fontSize: window.innerWidth <= 576 ? '12px' : '14px'
             }}
           >
-            Logout
+            {window.innerWidth <= 480 ? '' : 'Logout'}
           </Button>
         </motion.div>
       </motion.div>
@@ -90,18 +103,35 @@ const UserPortal = () => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '40px 20px'
+        padding: window.innerWidth <= 576 ? '20px 8px' : window.innerWidth <= 768 ? '30px 16px' : '40px 20px',
+        minHeight: 'calc(100vh - 120px)'
       }}>
         <motion.div 
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          style={{ textAlign: 'center', marginBottom: '48px' }}
+          style={{ 
+            textAlign: 'center', 
+            marginBottom: window.innerWidth <= 576 ? '24px' : window.innerWidth <= 768 ? '36px' : '48px',
+            maxWidth: '100%'
+          }}
         >
-          <Title level={1} style={{ color: '#262626', marginBottom: '12px', fontWeight: 800, fontSize: '32px' }}>
+          <Title level={1} style={{ 
+            color: '#262626', 
+            marginBottom: '12px', 
+            fontWeight: 800, 
+            fontSize: window.innerWidth <= 576 ? '20px' : window.innerWidth <= 768 ? '26px' : '32px',
+            lineHeight: 1.2
+          }}>
             Your Health Card
           </Title>
-          <Text style={{ color: '#8c8c8c', fontSize: '16px' }}>Click the card to view contact information</Text>
+          <Text style={{ 
+            color: '#8c8c8c', 
+            fontSize: window.innerWidth <= 576 ? '12px' : window.innerWidth <= 768 ? '14px' : '16px',
+            display: 'block',
+            maxWidth: '300px',
+            margin: '0 auto'
+          }}>Click the card to view contact information</Text>
         </motion.div>
 
         {userProfile && (
@@ -109,7 +139,12 @@ const UserPortal = () => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            style={{ marginBottom: '40px' }}
+            style={{ 
+              marginBottom: window.innerWidth <= 576 ? '20px' : window.innerWidth <= 768 ? '30px' : '40px',
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center'
+            }}
           >
             <ModernIdentityCard user={userProfile} />
           </motion.div>

@@ -3,6 +3,7 @@ import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Popconf
 import { UserOutlined, TeamOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { adminAPI } from '../services/api';
+import useResponsive from '../hooks/useResponsive';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -16,6 +17,7 @@ const AdminDashboard = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
   const { user, logout } = useAuth();
+  const { isMobile, isSmallMobile, isExtraSmallMobile } = useResponsive();
 
   useEffect(() => {
     fetchData();
@@ -112,50 +114,97 @@ const AdminDashboard = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed}>
+      <Sider 
+        collapsible 
+        collapsed={collapsed} 
+        onCollapse={setCollapsed}
+        breakpoint="lg"
+        collapsedWidth={isMobile ? 0 : 80}
+        style={{
+          position: isMobile ? 'fixed' : 'relative',
+          zIndex: isMobile ? 1000 : 'auto',
+          height: '100vh'
+        }}
+      >
         <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.3)' }} />
         <Menu
           theme="dark"
           defaultSelectedKeys={['employees']}
           mode="inline"
           onClick={({ key }) => setActiveTab(key)}
-        >
-          <Menu.Item key="employees" icon={<TeamOutlined />}>
-            Employees
-          </Menu.Item>
-          <Menu.Item key="users" icon={<UserOutlined />}>
-            Users
-          </Menu.Item>
-        </Menu>
+          items={[
+            {
+              key: 'employees',
+              icon: <TeamOutlined />,
+              label: 'Employees'
+            },
+            {
+              key: 'users',
+              icon: <UserOutlined />,
+              label: 'Users'
+            }
+          ]}
+        />
       </Sider>
 
-      <Layout>
-        <Header style={{ background: '#fff', padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={4} style={{ margin: 0 }}>Admin Dashboard</Title>
-          <Space>
-            <span>Welcome, {user?.name}</span>
-            <Button type="text" icon={<LogoutOutlined />} onClick={logout}>
-              Logout
+      <Layout style={{ marginLeft: isMobile ? 0 : undefined }}>
+        <Header style={{ 
+          background: '#fff', 
+          padding: isSmallMobile ? '0 8px' : '0 16px', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          minHeight: '64px',
+          height: 'auto'
+        }}>
+          <Title level={4} style={{ 
+            margin: 0, 
+            fontSize: isSmallMobile ? '16px' : '20px' 
+          }}>Admin Dashboard</Title>
+          <Space wrap>
+            <span style={{ fontSize: isSmallMobile ? '12px' : '14px' }}>Welcome, {user?.name}</span>
+            <Button 
+              type="text" 
+              icon={<LogoutOutlined />} 
+              onClick={logout}
+              size={isSmallMobile ? 'small' : 'middle'}
+            >
+              {isExtraSmallMobile ? '' : 'Logout'}
             </Button>
           </Space>
         </Header>
 
-        <Content style={{ margin: '16px' }}>
+        <Content style={{ 
+          margin: isMobile ? '8px' : '16px',
+          padding: isSmallMobile ? '0' : undefined
+        }}>
           <Card
             title={activeTab === 'employees' ? 'Employees Management' : 'Users Management'}
             extra={
               activeTab === 'employees' && (
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
-                  Add Employee
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />} 
+                  onClick={() => setModalVisible(true)}
+                  size={isSmallMobile ? 'small' : 'middle'}
+                >
+                  {isExtraSmallMobile ? 'Add' : 'Add Employee'}
                 </Button>
               )
             }
           >
             <Table
               columns={activeTab === 'employees' ? employeeColumns : userColumns}
-              dataSource={activeTab === 'employees' ? employees : users}
+              dataSource={Array.isArray(activeTab === 'employees' ? employees : users) ? (activeTab === 'employees' ? employees : users) : []}
               rowKey="_id"
               loading={loading}
+              scroll={{ x: isMobile ? 800 : undefined }}
+              pagination={{
+                pageSize: isSmallMobile ? 5 : 10,
+                showSizeChanger: !isSmallMobile,
+                showQuickJumper: !isMobile
+              }}
             />
           </Card>
         </Content>
@@ -169,6 +218,8 @@ const AdminDashboard = () => {
           form.resetFields();
         }}
         footer={null}
+        width={isSmallMobile ? '95%' : 520}
+        style={{ top: isSmallMobile ? 20 : undefined }}
       >
         <Form form={form} onFinish={handleCreateEmployee} layout="vertical">
           <Form.Item name="name" label="Name" rules={[{ required: true }]}>

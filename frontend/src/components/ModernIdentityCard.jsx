@@ -169,25 +169,40 @@ const ModernIdentityCard = ({ user }) => {
     }
   };
 
+  const getResponsiveCardSize = () => {
+    if (window.innerWidth <= 380) return { width: '320px', height: '200px' };
+    if (window.innerWidth <= 480) return { width: '350px', height: '220px' };
+    if (window.innerWidth <= 768) return { width: '380px', height: '240px' };
+    return { width: '400px', height: '250px' };
+  };
+
+  const cardSize = getResponsiveCardSize();
+
   const containerStyle = {
     perspective: '1200px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '20px',
-    padding: '20px'
+    gap: window.innerWidth <= 576 ? '12px' : '20px',
+    padding: window.innerWidth <= 576 ? '8px' : '20px',
+    width: '100%',
+    maxWidth: '100%',
+    overflow: 'hidden'
   };
 
   const cardStyle = {
-    width: '400px',
-    height: '250px',
+    width: cardSize.width,
+    height: cardSize.height,
     position: 'relative',
     transformStyle: 'preserve-3d',
     transition: 'transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
     cursor: 'pointer',
-    borderRadius: '20px',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1)',
-    transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+    borderRadius: window.innerWidth <= 480 ? '16px' : '20px',
+    boxShadow: window.innerWidth <= 480 ? 
+      '0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.08)' :
+      '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1)',
+    transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+    maxWidth: '100%'
   };
 
   const faceStyle = {
@@ -195,11 +210,12 @@ const ModernIdentityCard = ({ user }) => {
     width: '100%',
     height: '100%',
     backfaceVisibility: 'hidden',
-    borderRadius: '20px',
-    padding: '24px',
+    borderRadius: window.innerWidth <= 480 ? '16px' : '20px',
+    padding: window.innerWidth <= 380 ? '16px' : window.innerWidth <= 480 ? '20px' : '24px',
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    boxSizing: 'border-box'
   };
 
   const frontStyle = {
@@ -221,30 +237,74 @@ const ModernIdentityCard = ({ user }) => {
         {/* Front Side */}
         <div ref={frontCardRef} style={frontStyle}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <Title level={4} style={{ color: 'white', margin: 0, fontSize: '18px', fontWeight: 700, letterSpacing: '1px' }}>HEALTH CREDIT LIMIT CARD</Title>
+            <Title level={4} style={{ 
+              color: 'white', 
+              margin: 0, 
+              fontSize: window.innerWidth <= 380 ? '14px' : window.innerWidth <= 480 ? '16px' : '18px', 
+              fontWeight: 700, 
+              letterSpacing: '1px',
+              lineHeight: 1.2
+            }}>HEALTH CREDIT LIMIT CARD</Title>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: window.innerWidth <= 480 ? '16px' : '20px' }}>
             <Avatar
-              size={80}
+              size={window.innerWidth <= 380 ? 50 : window.innerWidth <= 480 ? 60 : 80}
               src={user.profileImage ? (user.profileImage.startsWith('data:') ? user.profileImage : `data:image/jpeg;base64,${user.profileImage}`) : `http://localhost:5000/uploads/${user.profileImage}`}
               icon={<UserOutlined />}
-              style={{ border: '3px solid rgba(255, 255, 255, 0.3)', boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', marginRight: '20px' }}
+              style={{ 
+                border: '3px solid rgba(255, 255, 255, 0.3)', 
+                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', 
+                marginRight: window.innerWidth <= 480 ? '12px' : '20px' 
+              }}
             />
-            <div style={{ flex: 1 }}>
-              <Title level={4} style={{ color: 'white', margin: 0, fontSize: '22px', fontWeight: 600, marginBottom: '6px' }}>{user.fullName}</Title>
-              <Text style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '14px' }}>ID: {user.userId}</Text>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Title level={4} style={{ 
+                color: 'white', 
+                margin: 0, 
+                fontSize: window.innerWidth <= 380 ? '16px' : window.innerWidth <= 480 ? '18px' : '22px', 
+                fontWeight: 600, 
+                marginBottom: '6px',
+                lineHeight: 1.2,
+                wordBreak: 'break-word'
+              }}>{user.fullName}</Title>
+              <Text style={{ 
+                color: 'rgba(255, 255, 255, 0.85)', 
+                fontSize: window.innerWidth <= 380 ? '11px' : window.innerWidth <= 480 ? '12px' : '14px' 
+              }}>ID: {user.userId}</Text>
             </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
-              <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>VALID FROM</Text>
-              <Text style={{ color: 'white', fontSize: '14px', fontWeight: 600 }}>{formatDate(user.startDate)}</Text>
+              <Text style={{ 
+                color: 'rgba(255, 255, 255, 0.8)', 
+                fontSize: window.innerWidth <= 380 ? '9px' : window.innerWidth <= 480 ? '10px' : '11px', 
+                fontWeight: 600, 
+                textTransform: 'uppercase', 
+                display: 'block', 
+                marginBottom: '4px' 
+              }}>VALID FROM</Text>
+              <Text style={{ 
+                color: 'white', 
+                fontSize: window.innerWidth <= 380 ? '11px' : window.innerWidth <= 480 ? '12px' : '14px', 
+                fontWeight: 600 
+              }}>{formatDate(user.startDate)}</Text>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>VALID UNTIL</Text>
-              <Text style={{ color: 'white', fontSize: '14px', fontWeight: 600 }}>{formatDate(user.endDate)}</Text>
+              <Text style={{ 
+                color: 'rgba(255, 255, 255, 0.8)', 
+                fontSize: window.innerWidth <= 380 ? '9px' : window.innerWidth <= 480 ? '10px' : '11px', 
+                fontWeight: 600, 
+                textTransform: 'uppercase', 
+                display: 'block', 
+                marginBottom: '4px' 
+              }}>VALID UNTIL</Text>
+              <Text style={{ 
+                color: 'white', 
+                fontSize: window.innerWidth <= 380 ? '11px' : window.innerWidth <= 480 ? '12px' : '14px', 
+                fontWeight: 600 
+              }}>{formatDate(user.endDate)}</Text>
             </div>
           </div>
         </div>
@@ -281,7 +341,11 @@ const ModernIdentityCard = ({ user }) => {
         </div>
       </div>
 
-      <Space size="large">
+      <Space 
+        size={window.innerWidth <= 576 ? 'small' : 'large'}
+        direction={window.innerWidth <= 480 ? 'vertical' : 'horizontal'}
+        style={{ width: window.innerWidth <= 480 ? '100%' : 'auto' }}
+      >
         <Button 
           type="primary"
           icon={<RotateRightOutlined />}
@@ -289,20 +353,22 @@ const ModernIdentityCard = ({ user }) => {
             e.stopPropagation();
             setFlipped(!flipped);
           }}
-          size="large"
+          size={window.innerWidth <= 576 ? 'middle' : 'large'}
           style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             border: 'none',
-            borderRadius: '25px',
-            padding: '8px 24px',
+            borderRadius: window.innerWidth <= 480 ? '20px' : '25px',
+            padding: window.innerWidth <= 480 ? '6px 16px' : '8px 24px',
             height: 'auto',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
-            boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)'
+            boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
+            fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+            width: window.innerWidth <= 480 ? '100%' : 'auto'
           }}
         >
-          {flipped ? 'Show Front' : 'Show Back'}
+          {window.innerWidth <= 380 ? (flipped ? 'Front' : 'Back') : (flipped ? 'Show Front' : 'Show Back')}
         </Button>
 
         <Button 
@@ -310,20 +376,22 @@ const ModernIdentityCard = ({ user }) => {
           icon={<DownloadOutlined />}
           onClick={downloadPDF}
           loading={isGenerating}
-          size="large"
+          size={window.innerWidth <= 576 ? 'middle' : 'large'}
           style={{
             background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
             border: 'none',
-            borderRadius: '25px',
-            padding: '8px 24px',
+            borderRadius: window.innerWidth <= 480 ? '20px' : '25px',
+            padding: window.innerWidth <= 480 ? '6px 16px' : '8px 24px',
             height: 'auto',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
-            boxShadow: '0 8px 16px rgba(245, 87, 108, 0.3)'
+            boxShadow: '0 8px 16px rgba(245, 87, 108, 0.3)',
+            fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+            width: window.innerWidth <= 480 ? '100%' : 'auto'
           }}
         >
-          Download PDF
+          {window.innerWidth <= 380 ? 'PDF' : 'Download PDF'}
         </Button>
       </Space>
     </div>

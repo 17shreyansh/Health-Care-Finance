@@ -59,25 +59,38 @@ const EmployeeDashboard = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ 
         background: '#fff', 
-        padding: '0 24px', 
+        padding: window.innerWidth <= 576 ? '0 8px' : '0 24px', 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        flexWrap: 'wrap',
+        minHeight: '64px',
+        height: 'auto'
       }}>
-        <Title level={4} style={{ margin: 0 }}>Employee Dashboard</Title>
-        <Space>
-          <span>Welcome, {user?.name}</span>
-          <Button type="text" icon={<LogoutOutlined />} onClick={logout}>
-            Logout
+        <Title level={4} style={{ 
+          margin: 0,
+          fontSize: window.innerWidth <= 576 ? '16px' : '20px'
+        }}>Employee Dashboard</Title>
+        <Space wrap>
+          <span style={{ fontSize: window.innerWidth <= 576 ? '12px' : '14px' }}>Welcome, {user?.name}</span>
+          <Button 
+            type="text" 
+            icon={<LogoutOutlined />} 
+            onClick={logout}
+            size={window.innerWidth <= 576 ? 'small' : 'middle'}
+          >
+            {window.innerWidth <= 480 ? '' : 'Logout'}
           </Button>
         </Space>
       </Header>
 
-      <Content style={{ padding: '24px' }}>
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Content style={{ 
+        padding: window.innerWidth <= 576 ? '12px' : window.innerWidth <= 768 ? '16px' : '24px'
+      }}>
+        <Row gutter={[window.innerWidth <= 576 ? 8 : 16, window.innerWidth <= 576 ? 8 : 16]} style={{ marginBottom: window.innerWidth <= 576 ? 12 : 24 }}>
           <Col xs={24} sm={12} md={8}>
-            <Card>
+            <Card size={window.innerWidth <= 576 ? 'small' : 'default'}>
               <Statistic
                 title="Your Employee ID"
                 value={dashboardData?.employeeId || user?.employeeId}
@@ -87,7 +100,7 @@ const EmployeeDashboard = () => {
             </Card>
           </Col>
           <Col xs={24} sm={12} md={8}>
-            <Card>
+            <Card size={window.innerWidth <= 576 ? 'small' : 'default'}>
               <Statistic
                 title="Total Referrals"
                 value={dashboardData?.totalReferrals || 0}
@@ -97,7 +110,7 @@ const EmployeeDashboard = () => {
             </Card>
           </Col>
           <Col xs={24} sm={12} md={8}>
-            <Card>
+            <Card size={window.innerWidth <= 576 ? 'small' : 'default'}>
               <Statistic
                 title="Active Referrals"
                 value={referrals.filter(r => new Date(r.endDate) > new Date()).length}
@@ -110,13 +123,18 @@ const EmployeeDashboard = () => {
 
         <Card 
           title="Your Referral Code Information" 
-          style={{ marginBottom: 24 }}
+          style={{ marginBottom: window.innerWidth <= 576 ? 12 : 24 }}
+          size={window.innerWidth <= 576 ? 'small' : 'default'}
         >
-          <Space direction="vertical" size="middle">
+          <Space direction="vertical" size={window.innerWidth <= 576 ? 'small' : 'middle'}>
             <div>
-              <Text strong>How to refer customers:</Text>
-              <ol style={{ marginTop: 8, paddingLeft: 20 }}>
-                <li>Share your Employee ID: <Text code>{dashboardData?.employeeId || user?.employeeId}</Text></li>
+              <Text strong style={{ fontSize: window.innerWidth <= 576 ? '12px' : '14px' }}>How to refer customers:</Text>
+              <ol style={{ 
+                marginTop: 8, 
+                paddingLeft: window.innerWidth <= 576 ? 16 : 20,
+                fontSize: window.innerWidth <= 576 ? '12px' : '14px'
+              }}>
+                <li>Share your Employee ID: <Text code style={{ fontSize: window.innerWidth <= 576 ? '11px' : '13px' }}>{dashboardData?.employeeId || user?.employeeId}</Text></li>
                 <li>Ask customers to use this ID during registration</li>
                 <li>Track your referrals in the table below</li>
               </ol>
@@ -124,13 +142,23 @@ const EmployeeDashboard = () => {
           </Space>
         </Card>
 
-        <Card title="My Referrals" loading={loading}>
+        <Card 
+          title="My Referrals" 
+          loading={loading}
+          size={window.innerWidth <= 576 ? 'small' : 'default'}
+        >
           <Table
             columns={referralColumns}
             dataSource={referrals}
             rowKey="_id"
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 800 }}
+            pagination={{ 
+              pageSize: window.innerWidth <= 576 ? 5 : 10,
+              showSizeChanger: window.innerWidth > 576,
+              showQuickJumper: window.innerWidth > 768,
+              size: window.innerWidth <= 576 ? 'small' : 'default'
+            }}
+            scroll={{ x: window.innerWidth <= 768 ? 600 : 800 }}
+            size={window.innerWidth <= 576 ? 'small' : 'default'}
           />
         </Card>
       </Content>
