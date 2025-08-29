@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Popconfirm, Typography, Space } from 'antd';
-import { UserOutlined, TeamOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined, DashboardOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { adminAPI } from '../services/api';
 import useResponsive from '../hooks/useResponsive';
+import AdminDashboardOverview from '../components/AdminDashboardOverview';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
 const AdminDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('employees');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [employees, setEmployees] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,10 +21,14 @@ const AdminDashboard = () => {
   const { isMobile, isSmallMobile, isExtraSmallMobile } = useResponsive();
 
   useEffect(() => {
-    fetchData();
+    if (activeTab !== 'dashboard') {
+      fetchData();
+    }
   }, [activeTab]);
 
   const fetchData = async () => {
+    if (activeTab === 'dashboard') return;
+    
     setLoading(true);
     try {
       if (activeTab === 'employees') {
@@ -31,7 +36,7 @@ const AdminDashboard = () => {
         // Handle both paginated and direct array responses
         const employeeData = response.data.employees || response.data;
         setEmployees(Array.isArray(employeeData) ? employeeData : []);
-      } else {
+      } else if (activeTab === 'users') {
         const response = await adminAPI.getUsers();
         // Handle both paginated and direct array responses
         const userData = response.data.users || response.data;
@@ -140,10 +145,15 @@ const AdminDashboard = () => {
         <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.3)' }} />
         <Menu
           theme="dark"
-          defaultSelectedKeys={['employees']}
+          defaultSelectedKeys={['dashboard']}
           mode="inline"
           onClick={({ key }) => setActiveTab(key)}
           items={[
+            {
+              key: 'dashboard',
+              icon: <DashboardOutlined />,
+              label: 'Dashboard'
+            },
             {
               key: 'employees',
               icon: <TeamOutlined />,
@@ -190,34 +200,42 @@ const AdminDashboard = () => {
           margin: isMobile ? '8px' : '16px',
           padding: isSmallMobile ? '0' : undefined
         }}>
-          <Card
-            title={activeTab === 'employees' ? 'Employees Management' : 'Users Management'}
-            extra={
-              activeTab === 'employees' && (
-                <Button 
-                  type="primary" 
-                  icon={<PlusOutlined />} 
-                  onClick={() => setModalVisible(true)}
-                  size={isSmallMobile ? 'small' : 'middle'}
-                >
-                  {isExtraSmallMobile ? 'Add' : 'Add Employee'}
-                </Button>
-              )
-            }
-          >
-            <Table
-              columns={activeTab === 'employees' ? employeeColumns : userColumns}
-              dataSource={Array.isArray(activeTab === 'employees' ? employees : users) ? (activeTab === 'employees' ? employees : users) : []}
-              rowKey="_id"
-              loading={loading}
-              scroll={{ x: isMobile ? 800 : undefined }}
-              pagination={{
-                pageSize: isSmallMobile ? 5 : 10,
-                showSizeChanger: !isSmallMobile,
-                showQuickJumper: !isMobile
-              }}
-            />
-          </Card>
+          {activeTab === 'dashboard' ? (
+            <div>
+              <Card title="Dashboard Overview" style={{ marginBottom: 16 }}>
+                <AdminDashboardOverview />
+              </Card>
+            </div>
+          ) : (
+            <Card
+              title={activeTab === 'employees' ? 'Employees Management' : 'Users Management'}
+              extra={
+                activeTab === 'employees' && (
+                  <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />} 
+                    onClick={() => setModalVisible(true)}
+                    size={isSmallMobile ? 'small' : 'middle'}
+                  >
+                    {isExtraSmallMobile ? 'Add' : 'Add Employee'}
+                  </Button>
+                )
+              }
+            >
+              <Table
+                columns={activeTab === 'employees' ? employeeColumns : userColumns}
+                dataSource={Array.isArray(activeTab === 'employees' ? employees : users) ? (activeTab === 'employees' ? employees : users) : []}
+                rowKey="_id"
+                loading={loading}
+                scroll={{ x: isMobile ? 800 : undefined }}
+                pagination={{
+                  pageSize: isSmallMobile ? 5 : 10,
+                  showSizeChanger: !isSmallMobile,
+                  showQuickJumper: !isMobile
+                }}
+              />
+            </Card>
+          )}
         </Content>
       </Layout>
 
