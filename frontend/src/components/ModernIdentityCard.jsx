@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Avatar, Typography, Button, Space, message } from 'antd';
+import { Avatar, Typography, Button, Space, message, Modal, Form, Input, Upload } from 'antd';
 import { 
   UserOutlined, 
   CalendarOutlined, 
@@ -7,16 +7,23 @@ import {
   PhoneOutlined,
   SafetyCertificateOutlined,
   CreditCardOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  EditOutlined,
+  UploadOutlined
 } from '@ant-design/icons';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { userAPI } from '../services/api';
 
 const { Title, Text } = Typography;
 
-const ModernIdentityCard = ({ user }) => {
+const ModernIdentityCard = ({ user, onUserUpdate }) => {
   const [flipped, setFlipped] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [fileList, setFileList] = useState([]);
+  const [form] = Form.useForm();
   const frontCardRef = useRef(null);
   const backCardRef = useRef(null);
 
@@ -25,6 +32,55 @@ const ModernIdentityCard = ({ user }) => {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  const handleEdit = () => {
+    form.setFieldsValue({
+      fullName: user.fullName,
+      fatherName: user.fatherName,
+      mobileNumber: user.mobileNumber
+    });
+    setEditModalVisible(true);
+  };
+
+  const handleEditSubmit = async (values) => {
+    setEditLoading(true);
+    try {
+      let payload = { ...values };
+      
+      if (fileList.length > 0) {
+        const base64Image = await compressImage(fileList[0].originFileObj);
+        payload.profileImage = base64Image;
+      }
+      
+      const response = await userAPI.updateProfile(payload);
+      message.success('Profile updated successfully!');
+      setEditModalVisible(false);
+      setFileList([]);
+      if (onUserUpdate) {
+        onUserUpdate(response.data);
+      }
+    } catch (error) {
+      message.error('Failed to update profile');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const compressImage = (file, maxWidth = 300, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        canvas.width = maxWidth;
+        canvas.height = (img.height * maxWidth) / img.width;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = URL.createObjectURL(file);
     });
   };
 
@@ -220,13 +276,13 @@ const ModernIdentityCard = ({ user }) => {
 
   const frontStyle = {
     ...faceStyle,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+    background: '#1e40af',
     color: 'white'
   };
 
   const backStyle = {
     ...faceStyle,
-    background: 'linear-gradient(135deg, #764ba2 0%, #667eea 50%, #f093fb 100%)',
+    background: '#1e3a8a',
     color: 'white',
     transform: 'rotateY(180deg)'
   };
@@ -348,6 +404,24 @@ const ModernIdentityCard = ({ user }) => {
       >
         <Button 
           type="primary"
+          icon={<EditOutlined />}
+          onClick={handleEdit}
+          size={window.innerWidth <= 576 ? 'middle' : 'large'}
+          style={{
+            background: '#059669',
+            border: 'none',
+            borderRadius: '8px',
+            padding: window.innerWidth <= 480 ? '6px 16px' : '8px 20px',
+            height: 'auto',
+            fontWeight: 500,
+            fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+            width: window.innerWidth <= 480 ? '100%' : 'auto'
+          }}
+        >
+          {window.innerWidth <= 380 ? 'Edit' : 'Edit Card'}
+        </Button>
+
+        <Button 
           icon={<RotateRightOutlined />}
           onClick={(e) => {
             e.stopPropagation();
@@ -355,15 +429,13 @@ const ModernIdentityCard = ({ user }) => {
           }}
           size={window.innerWidth <= 576 ? 'middle' : 'large'}
           style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            borderRadius: window.innerWidth <= 480 ? '20px' : '25px',
-            padding: window.innerWidth <= 480 ? '6px 16px' : '8px 24px',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            color: '#475569',
+            borderRadius: '8px',
+            padding: window.innerWidth <= 480 ? '6px 16px' : '8px 20px',
             height: 'auto',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
+            fontWeight: 500,
             fontSize: window.innerWidth <= 480 ? '12px' : '14px',
             width: window.innerWidth <= 480 ? '100%' : 'auto'
           }}
@@ -378,15 +450,12 @@ const ModernIdentityCard = ({ user }) => {
           loading={isGenerating}
           size={window.innerWidth <= 576 ? 'middle' : 'large'}
           style={{
-            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            background: '#1e40af',
             border: 'none',
-            borderRadius: window.innerWidth <= 480 ? '20px' : '25px',
-            padding: window.innerWidth <= 480 ? '6px 16px' : '8px 24px',
+            borderRadius: '8px',
+            padding: window.innerWidth <= 480 ? '6px 16px' : '8px 20px',
             height: 'auto',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            boxShadow: '0 8px 16px rgba(245, 87, 108, 0.3)',
+            fontWeight: 500,
             fontSize: window.innerWidth <= 480 ? '12px' : '14px',
             width: window.innerWidth <= 480 ? '100%' : 'auto'
           }}
@@ -394,6 +463,76 @@ const ModernIdentityCard = ({ user }) => {
           {window.innerWidth <= 380 ? 'PDF' : 'Download PDF'}
         </Button>
       </Space>
+
+      <Modal
+        title="Edit Card Details"
+        open={editModalVisible}
+        onCancel={() => {
+          setEditModalVisible(false);
+          setFileList([]);
+        }}
+        footer={null}
+        width={400}
+      >
+        <Form
+          form={form}
+          onFinish={handleEditSubmit}
+          layout="vertical"
+        >
+          <Form.Item
+            name="fullName"
+            label="Full Name"
+            rules={[{ required: true, message: 'Please input your full name!' }]}
+          >
+            <Input prefix={<UserOutlined />} />
+          </Form.Item>
+
+          <Form.Item
+            name="fatherName"
+            label="Father's Name"
+            rules={[{ required: true, message: "Please input your father's name!" }]}
+          >
+            <Input prefix={<UserOutlined />} />
+          </Form.Item>
+
+          <Form.Item
+            name="mobileNumber"
+            label="Mobile Number"
+            rules={[
+              { required: true, message: 'Please input your mobile number!' },
+              { pattern: /^[0-9]{10}$/, message: 'Please enter a valid 10-digit mobile number!' }
+            ]}
+          >
+            <Input prefix={<PhoneOutlined />} maxLength={10} />
+          </Form.Item>
+
+          <Form.Item label="Profile Image (Optional)">
+            <Upload
+              listType="picture"
+              fileList={fileList}
+              onChange={({ fileList }) => setFileList(fileList)}
+              beforeUpload={() => false}
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />}>Update Profile Image</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={editLoading}>
+                Update Card
+              </Button>
+              <Button onClick={() => {
+                setEditModalVisible(false);
+                setFileList([]);
+              }}>
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

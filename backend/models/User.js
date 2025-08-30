@@ -11,7 +11,9 @@ const userSchema = new mongoose.Schema({
   userId: { type: String, unique: true },
   startDate: { type: Date, default: Date.now },
   endDate: { type: Date },
-  role: { type: String, default: 'user' }
+  role: { type: String, default: 'user' },
+  paymentStatus: { type: String, enum: ['pending', 'successful', 'rejected'], default: 'pending' },
+  paymentAmount: { type: Number, default: 500 }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {

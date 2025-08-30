@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Popconfirm, Typography, Space } from 'antd';
-import { UserOutlined, TeamOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined, DashboardOutlined } from '@ant-design/icons';
+import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Popconfirm, Typography, Space, Tag, Upload } from 'antd';
+import { UserOutlined, TeamOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined, DashboardOutlined, CheckOutlined, CloseOutlined, SettingOutlined, UploadOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { adminAPI } from '../services/api';
 import useResponsive from '../hooks/useResponsive';
@@ -16,12 +16,18 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [paymentSettings, setPaymentSettings] = useState(null);
+  const [fileList, setFileList] = useState([]);
   const [form] = Form.useForm();
+  const [paymentForm] = Form.useForm();
   const { user, logout } = useAuth();
   const { isMobile, isSmallMobile, isExtraSmallMobile } = useResponsive();
 
   useEffect(() => {
-    if (activeTab !== 'dashboard') {
+    if (activeTab === 'payment-settings') {
+      fetchPaymentSettings();
+    } else if (activeTab !== 'dashboard') {
       fetchData();
     }
   }, [activeTab]);
@@ -88,6 +94,62 @@ const AdminDashboard = () => {
     }
   };
 
+  const handlePaymentStatusUpdate = async (userId, status) => {
+    try {
+      await adminAPI.updatePaymentStatus(userId, status);
+      message.success(`Payment status updated to ${status}`);
+      fetchData();
+    } catch (error) {
+      message.error('Failed to update payment status');
+    }
+  };
+
+  const fetchPaymentSettings = async () => {
+    try {
+      const response = await adminAPI.getPaymentSettings();
+      setPaymentSettings(response.data);
+      paymentForm.setFieldsValue({
+        amount: response.data.amount
+      });
+    } catch (error) {
+      message.error('Failed to fetch payment settings');
+    }
+  };
+
+  const handlePaymentSettingsUpdate = async (values) => {
+    try {
+      let payload = { ...values };
+      
+      if (fileList.length > 0) {
+        const base64Image = await compressImage(fileList[0].originFileObj);
+        payload.qrCodeImage = base64Image;
+      }
+      
+      await adminAPI.updatePaymentSettings(payload);
+      message.success('Payment settings updated successfully');
+      setFileList([]);
+      fetchPaymentSettings();
+    } catch (error) {
+      message.error('Failed to update payment settings');
+    }
+  };
+
+  const compressImage = (file, maxWidth = 300, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        canvas.width = maxWidth;
+        canvas.height = (img.height * maxWidth) / img.width;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const employeeColumns = [
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
@@ -113,17 +175,50 @@ const AdminDashboard = () => {
     { title: 'Mobile', dataIndex: 'mobileNumber', key: 'mobileNumber' },
     { title: 'User ID', dataIndex: 'userId', key: 'userId' },
     { title: 'Employee ID', dataIndex: 'employeeId', key: 'employeeId' },
+    {
+      title: 'Payment Status',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
+      render: (status) => {
+        const colors = { pending: 'orange', successful: 'green', rejected: 'red' };
+        return <Tag color={colors[status]}>{status?.toUpperCase() || 'PENDING'}</Tag>;
+      }
+    },
     { title: 'Registration Date', dataIndex: 'startDate', key: 'startDate', render: (date) => new Date(date).toLocaleDateString() },
     {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
-        <Popconfirm
-          title="Are you sure you want to delete this user?"
-          onConfirm={() => handleDeleteUser(record._id)}
-        >
-          <Button type="text" danger icon={<DeleteOutlined />} />
-        </Popconfirm>
+        <Space>
+          {record.paymentStatus === 'pending' && (
+            <>
+              <Button 
+                type="text" 
+                icon={<CheckOutlined />} 
+                size="small"
+                style={{ color: '#059669' }}
+                onClick={() => handlePaymentStatusUpdate(record._id, 'successful')}
+              >
+                Approve
+              </Button>
+              <Button 
+                type="text" 
+                icon={<CloseOutlined />} 
+                size="small"
+                danger
+                onClick={() => handlePaymentStatusUpdate(record._id, 'rejected')}
+              >
+                Reject
+              </Button>
+            </>
+          )}
+          <Popconfirm
+            title="Are you sure you want to delete this user?"
+            onConfirm={() => handleDeleteUser(record._id)}
+          >
+            <Button type="text" danger icon={<DeleteOutlined />} size="small" />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -163,6 +258,11 @@ const AdminDashboard = () => {
               key: 'users',
               icon: <UserOutlined />,
               label: 'Users'
+            },
+            {
+              key: 'payment-settings',
+              icon: <SettingOutlined />,
+              label: 'Payment Settings'
             }
           ]}
         />
@@ -206,20 +306,69 @@ const AdminDashboard = () => {
                 <AdminDashboardOverview />
               </Card>
             </div>
+          ) : activeTab === 'payment-settings' ? (
+            <Card title="Payment Settings">
+              <Form
+                form={paymentForm}
+                onFinish={handlePaymentSettingsUpdate}
+                layout="vertical"
+                style={{ maxWidth: 500 }}
+              >
+                <Form.Item
+                  name="amount"
+                  label="Registration Amount (₹)"
+                  rules={[{ required: true, message: 'Please input amount!' }]}
+                >
+                  <Input type="number" placeholder="Enter amount" size="large" />
+                </Form.Item>
+
+                <Form.Item label="QR Code Image">
+                  <Upload
+                    listType="picture"
+                    fileList={fileList}
+                    onChange={({ fileList }) => setFileList(fileList)}
+                    beforeUpload={() => false}
+                    maxCount={1}
+                  >
+                    <Button icon={<UploadOutlined />} size="large">Upload QR Code</Button>
+                  </Upload>
+                  {paymentSettings?.qrCodeImage && fileList.length === 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <img 
+                        src={paymentSettings.qrCodeImage.startsWith('data:') 
+                          ? paymentSettings.qrCodeImage 
+                          : `data:image/jpeg;base64,${paymentSettings.qrCodeImage}`}
+                        alt="Current QR Code"
+                        style={{ width: 200, height: 200, objectFit: 'cover', border: '1px solid #d9d9d9', borderRadius: '8px' }}
+                      />
+                    </div>
+                  )}
+                </Form.Item>
+
+                <Form.Item>
+                  <Button type="primary" htmlType="submit" size="large">
+                    Update Payment Settings
+                  </Button>
+                </Form.Item>
+              </Form>
+            </Card>
           ) : (
             <Card
               title={activeTab === 'employees' ? 'Employees Management' : 'Users Management'}
               extra={
-                activeTab === 'employees' && (
-                  <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />} 
-                    onClick={() => setModalVisible(true)}
-                    size={isSmallMobile ? 'small' : 'middle'}
-                  >
-                    {isExtraSmallMobile ? 'Add' : 'Add Employee'}
-                  </Button>
-                )
+                <Space>
+                  {activeTab === 'employees' && (
+                    <Button 
+                      type="primary" 
+                      icon={<PlusOutlined />} 
+                      onClick={() => setModalVisible(true)}
+                      size={isSmallMobile ? 'small' : 'middle'}
+                    >
+                      {isExtraSmallMobile ? 'Add' : 'Add Employee'}
+                    </Button>
+                  )}
+
+                </Space>
               }
             >
               <Table
@@ -270,6 +419,8 @@ const AdminDashboard = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+
     </Layout>
   );
 };

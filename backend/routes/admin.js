@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const Admin = require('../models/Admin');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const PaymentSettings = require('../models/PaymentSettings');
 const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -204,6 +205,58 @@ router.delete('/users/:id', auth, authorize('admin'), async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user payment status
+router.put('/users/:id/payment', auth, authorize('admin'), async (req, res) => {
+  try {
+    const { paymentStatus } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { paymentStatus },
+      { new: true }
+    ).select('-password');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get payment settings
+router.get('/payment-settings', auth, authorize('admin'), async (req, res) => {
+  try {
+    let settings = await PaymentSettings.findOne({ isActive: true });
+    if (!settings) {
+      settings = new PaymentSettings({
+        qrCodeImage: '',
+        amount: 500
+      });
+      await settings.save();
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update payment settings
+router.put('/payment-settings', auth, authorize('admin'), async (req, res) => {
+  try {
+    const { qrCodeImage, amount } = req.body;
+    let settings = await PaymentSettings.findOne({ isActive: true });
+    
+    if (!settings) {
+      settings = new PaymentSettings({ qrCodeImage, amount });
+    } else {
+      settings.qrCodeImage = qrCodeImage || settings.qrCodeImage;
+      settings.amount = amount || settings.amount;
+    }
+    
+    await settings.save();
+    res.json(settings);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

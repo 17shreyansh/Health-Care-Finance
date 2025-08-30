@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Card, Table, Typography, Space, Button, Statistic, Row, Col, Tag } from 'antd';
-import { UserOutlined, LogoutOutlined, TeamOutlined, IdcardOutlined } from '@ant-design/icons';
+import { Layout, Card, Table, Typography, Space, Button, Statistic, Row, Col, Tag, message } from 'antd';
+import { UserOutlined, LogoutOutlined, TeamOutlined, IdcardOutlined, ShareAltOutlined, CopyOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { employeeAPI } from '../services/api';
 
@@ -28,6 +28,13 @@ const EmployeeDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyReferralLink = () => {
+    const employeeId = dashboardData?.employeeId || user?.employeeId;
+    const referralLink = `${window.location.origin}/register?ref=${employeeId}`;
+    navigator.clipboard.writeText(referralLink);
+    message.success('Referral link copied to clipboard!');
   };
 
   const referralColumns = [
@@ -122,22 +129,49 @@ const EmployeeDashboard = () => {
         </Row>
 
         <Card 
-          title="Your Referral Code Information" 
+          title="Your Referral Information" 
           style={{ marginBottom: window.innerWidth <= 576 ? 12 : 24 }}
           size={window.innerWidth <= 576 ? 'small' : 'default'}
         >
-          <Space direction="vertical" size={window.innerWidth <= 576 ? 'small' : 'middle'}>
+          <Space direction="vertical" size={window.innerWidth <= 576 ? 'small' : 'middle'} style={{ width: '100%' }}>
             <div>
-              <Text strong style={{ fontSize: window.innerWidth <= 576 ? '12px' : '14px' }}>How to refer customers:</Text>
-              <ol style={{ 
-                marginTop: 8, 
-                paddingLeft: window.innerWidth <= 576 ? 16 : 20,
-                fontSize: window.innerWidth <= 576 ? '12px' : '14px'
-              }}>
-                <li>Share your Employee ID: <Text code style={{ fontSize: window.innerWidth <= 576 ? '11px' : '13px' }}>{dashboardData?.employeeId || user?.employeeId}</Text></li>
-                <li>Ask customers to use this ID during registration</li>
-                <li>Track your referrals in the table below</li>
-              </ol>
+              <Text strong style={{ fontSize: window.innerWidth <= 576 ? '12px' : '14px' }}>Employee ID:</Text>
+              <Text code style={{ fontSize: window.innerWidth <= 576 ? '11px' : '13px', marginLeft: 8 }}>
+                {dashboardData?.employeeId || user?.employeeId}
+              </Text>
+            </div>
+            
+            <div>
+              <Text strong style={{ fontSize: window.innerWidth <= 576 ? '12px' : '14px' }}>Shareable Referral Link:</Text>
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Button 
+                  type="primary" 
+                  icon={<CopyOutlined />} 
+                  onClick={copyReferralLink}
+                  size={window.innerWidth <= 576 ? 'small' : 'middle'}
+                >
+                  Copy Referral Link
+                </Button>
+                <Button 
+                  icon={<ShareAltOutlined />} 
+                  onClick={() => {
+                    const employeeId = dashboardData?.employeeId || user?.employeeId;
+                    const referralLink = `${window.location.origin}/register?ref=${employeeId}`;
+                    if (navigator.share) {
+                      navigator.share({ title: 'Join Health Credit System', url: referralLink });
+                    } else {
+                      copyReferralLink();
+                    }
+                  }}
+                  size={window.innerWidth <= 576 ? 'small' : 'middle'}
+                >
+                  Share Link
+                </Button>
+              </div>
+            </div>
+            
+            <div style={{ fontSize: window.innerWidth <= 576 ? '11px' : '12px', color: '#666' }}>
+              <Text type="secondary">Share this link with customers. Their Employee ID will be automatically filled and locked during registration.</Text>
             </div>
           </Space>
         </Card>

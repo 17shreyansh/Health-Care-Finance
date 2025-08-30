@@ -7,7 +7,6 @@ const auth = async (req, res, next) => {
   try {
     const token = req.cookies.token || req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
-      console.log('No token found in cookies or headers');
       return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
@@ -23,11 +22,10 @@ const auth = async (req, res, next) => {
     }
 
     if (!user) {
-      console.log(`User not found for token with ID: ${decoded.id}, role: ${decoded.role}`);
+      res.clearCookie('token');
       return res.status(401).json({ message: 'Invalid token - user not found.' });
     }
 
-    // Add role to user object if not present
     if (!user.role) {
       user.role = decoded.role;
     }
@@ -35,11 +33,11 @@ const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error.message);
+    res.clearCookie('token');
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token expired.' });
     }
-    res.status(401).json({ message: 'Invalid token.' });
+    return res.status(401).json({ message: 'Invalid token.' });
   }
 };
 

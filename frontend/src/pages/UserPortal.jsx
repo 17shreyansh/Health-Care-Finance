@@ -20,14 +20,16 @@ const UserPortal = () => {
   const fetchUserProfile = async () => {
     try {
       const response = await userAPI.getMe();
-      console.log('User Profile Data:', response.data);
-      console.log('Profile Image Field:', response.data.profileImage);
       setUserProfile(response.data);
     } catch (error) {
       console.error('Failed to fetch user profile');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUserUpdate = (updatedUser) => {
+    setUserProfile(updatedUser);
   };
 
   if (loading) {
@@ -43,7 +45,7 @@ const UserPortal = () => {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: '#fafbfc',
+      background: '#f8fafc',
       display: 'flex',
       flexDirection: 'column'
     }}>
@@ -53,25 +55,25 @@ const UserPortal = () => {
         animate={{ y: 0, opacity: 1 }}
         style={{
           background: '#ffffff',
-          borderBottom: '1px solid #e8e8e8',
+          borderBottom: '1px solid #e2e8f0',
           padding: window.innerWidth <= 576 ? '16px 12px' : window.innerWidth <= 768 ? '18px 20px' : '20px 32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           flexWrap: 'wrap',
           gap: window.innerWidth <= 576 ? '8px' : '0'
         }}
       >
         <div style={{ flex: window.innerWidth <= 576 ? '1 1 100%' : 'auto', textAlign: window.innerWidth <= 576 ? 'center' : 'left' }}>
           <Title level={3} style={{ 
-            color: '#262626', 
+            color: '#1e293b', 
             margin: 0, 
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: window.innerWidth <= 576 ? '18px' : window.innerWidth <= 768 ? '20px' : '24px'
           }}>Health Portal</Title>
           <Text style={{ 
-            color: '#8c8c8c', 
+            color: '#64748b', 
             fontSize: window.innerWidth <= 576 ? '12px' : '14px',
             display: 'block'
           }}>Welcome back, {userProfile?.fullName}</Text>
@@ -82,9 +84,10 @@ const UserPortal = () => {
             onClick={logout}
             size={window.innerWidth <= 576 ? 'small' : 'middle'}
             style={{ 
-              borderRadius: '10px',
-              border: '1px solid #e8e8e8',
-              color: '#595959',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              color: '#475569',
+              background: '#f8fafc',
               height: window.innerWidth <= 576 ? '32px' : '40px',
               paddingLeft: window.innerWidth <= 576 ? '12px' : '16px',
               paddingRight: window.innerWidth <= 576 ? '12px' : '16px',
@@ -117,16 +120,16 @@ const UserPortal = () => {
           }}
         >
           <Title level={1} style={{ 
-            color: '#262626', 
+            color: '#0f172a', 
             marginBottom: '12px', 
-            fontWeight: 800, 
+            fontWeight: 700, 
             fontSize: window.innerWidth <= 576 ? '20px' : window.innerWidth <= 768 ? '26px' : '32px',
             lineHeight: 1.2
           }}>
             Your Health Card
           </Title>
           <Text style={{ 
-            color: '#8c8c8c', 
+            color: '#64748b', 
             fontSize: window.innerWidth <= 576 ? '12px' : window.innerWidth <= 768 ? '14px' : '16px',
             display: 'block',
             maxWidth: '300px',
@@ -146,7 +149,7 @@ const UserPortal = () => {
               justifyContent: 'center'
             }}
           >
-            <ModernIdentityCard user={userProfile} />
+            <ModernIdentityCard user={userProfile} onUserUpdate={handleUserUpdate} />
           </motion.div>
         )}
 

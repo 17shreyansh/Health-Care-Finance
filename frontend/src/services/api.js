@@ -26,15 +26,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message: error.response?.data?.message || error.message
-    });
-    
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    // Only redirect on 401 if not already on login/register pages
+    if (error.response?.status === 401 && 
+        !window.location.pathname.includes('/login') && 
+        !window.location.pathname.includes('/register')) {
       window.location.href = '/login';
     }
     
@@ -47,6 +42,8 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   logout: () => api.post('/auth/logout'),
   getMe: () => api.get('/auth/me'),
+  validateReferral: (employeeId) => api.get(`/auth/referral/${employeeId}`),
+  getPaymentSettings: () => api.get('/auth/payment-settings'),
 };
 
 export const adminAPI = {
@@ -57,6 +54,9 @@ export const adminAPI = {
   deleteEmployee: (id) => api.delete(`/admin/employees/${id}`),
   getUsers: (params) => api.get('/admin/users', { params }),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  updatePaymentStatus: (id, status) => api.put(`/admin/users/${id}/payment`, { paymentStatus: status }),
+  getPaymentSettings: () => api.get('/admin/payment-settings'),
+  updatePaymentSettings: (data) => api.put('/admin/payment-settings', data),
 };
 
 export const employeeAPI = {
@@ -67,6 +67,7 @@ export const employeeAPI = {
 export const userAPI = {
   getProfile: (userId) => api.get(`/users/profile/${userId}`),
   getMe: () => api.get('/users/me'),
+  updateProfile: (data) => api.put('/users/profile', data),
 };
 
 export default api;

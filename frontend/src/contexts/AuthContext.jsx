@@ -24,11 +24,11 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.getMe();
       setUser(response.data.user);
     } catch (error) {
-      // 401 is expected when not logged in, don't log it
-      if (error.response?.status !== 401) {
-        console.error('Auth check failed:', error);
-      }
       setUser(null);
+      // Clear any stored auth state on auth failure
+      if (error.response?.status === 401) {
+        await authAPI.logout().catch(() => {});
+      }
     } finally {
       setLoading(false);
     }
