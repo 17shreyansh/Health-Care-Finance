@@ -21,7 +21,7 @@ userSchema.pre('save', async function(next) {
     this.userId = 'HC' + Date.now().toString().slice(-8);
   }
   if (!this.endDate) {
-    this.endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    this.endDate = new Date(Date.now() + 730 * 24 * 60 * 60 * 1000);
   }
   if (this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 12);

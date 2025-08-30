@@ -1,12 +1,14 @@
 import React from 'react';
 import { Card, Typography, Button, Row, Col } from 'antd';
-import { UserOutlined, TeamOutlined, CrownOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, CrownOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
 
   return (
     <div style={{ 
@@ -23,8 +25,30 @@ const Home = () => {
             Health Credit System
           </Title>
           <Text type="secondary" style={{ fontSize: '16px' }}>
-            Choose your login portal
+            {isAuthenticated ? `Welcome back, ${user?.name || user?.fullName}!` : 'Choose your login portal'}
           </Text>
+          {isAuthenticated && (
+            <div style={{ marginTop: 16 }}>
+              <Button 
+                type="default" 
+                icon={<LogoutOutlined />}
+                onClick={logout}
+                style={{ marginRight: 8 }}
+              >
+                Logout
+              </Button>
+              <Button 
+                type="primary" 
+                onClick={() => {
+                  if (user?.role === 'admin') navigate('/admin');
+                  else if (user?.role === 'employee') navigate('/employee');
+                  else if (user?.role === 'user') navigate('/user');
+                }}
+              >
+                Go to Dashboard
+              </Button>
+            </div>
+          )}
         </div>
 
         <Row gutter={[24, 24]} justify="center">

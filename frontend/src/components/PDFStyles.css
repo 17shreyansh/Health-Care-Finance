@@ -1,0 +1,37 @@
+/* PDF-specific styles to ensure consistent rendering */
+.pdf-card-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.pdf-card-container * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure images render properly in PDF */
+.pdf-card-container img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Force hardware acceleration off for PDF generation */
+.pdf-card-container .card-face {
+  transform: translateZ(0) !important;
+  will-change: auto !important;
+}
+
+/* Ensure text renders clearly */
+.pdf-card-container .card-text {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Remove any animations or transitions for PDF */
+.pdf-card-container * {
+  animation: none !important;
+  transition: none !important;
+}

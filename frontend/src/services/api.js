@@ -26,11 +26,12 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Only redirect on 401 if not already on login/register pages
+    // Only redirect on 401 if not already on login/register/home pages
     if (error.response?.status === 401 && 
         !window.location.pathname.includes('/login') && 
-        !window.location.pathname.includes('/register')) {
-      window.location.href = '/login';
+        !window.location.pathname.includes('/register') &&
+        window.location.pathname !== '/') {
+      window.location.href = '/';
     }
     
     return Promise.reject(error);

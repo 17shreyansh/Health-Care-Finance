@@ -11,9 +11,11 @@ import {
   EditOutlined,
   UploadOutlined
 } from '@ant-design/icons';
+import { userAPI } from '../services/api';
+import backgroundImage from '../assets/image.jpg';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { userAPI } from '../services/api';
+import PDFCardClone from './PDFCardClone';
 
 const { Title, Text } = Typography;
 
@@ -26,6 +28,9 @@ const ModernIdentityCard = ({ user, onUserUpdate }) => {
   const [form] = Form.useForm();
   const frontCardRef = useRef(null);
   const backCardRef = useRef(null);
+  const pdfFrontRef = useRef(null);
+  const pdfBackRef = useRef(null);
+
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -87,137 +92,43 @@ const ModernIdentityCard = ({ user, onUserUpdate }) => {
   const downloadPDF = async () => {
     try {
       setIsGenerating(true);
-      message.loading('Generating PDF...', 0);
+      message.loading('Generating high-quality PDF...', 0);
 
-      // Create PDF document
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: [85.6, 53.98] // Credit card size
+        format: [85.6, 53.98]
       });
 
-      // Capture front side
-      const frontCanvas = await html2canvas(frontCardRef.current, {
-        scale: 3,
-        backgroundColor: null,
+      // Capture front card clone
+      const frontCanvas = await html2canvas(pdfFrontRef.current, {
+        scale: 4,
         useCORS: true,
         allowTaint: true,
+        backgroundColor: null,
         width: 400,
         height: 250
       });
 
-      // Add front side to PDF
-      const frontImgData = frontCanvas.toDataURL('image/png');
-      pdf.addImage(frontImgData, 'PNG', 0, 0, 85.6, 53.98);
-
-      // Add new page for back side
+      pdf.addImage(frontCanvas.toDataURL('image/png', 1.0), 'PNG', 0, 0, 85.6, 53.98);
       pdf.addPage();
 
-      // Create a temporary container for back side without transform
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '400px';
-      tempContainer.style.height = '250px';
-      document.body.appendChild(tempContainer);
-
-      // Create back side element without flip transform
-      const backElement = document.createElement('div');
-      backElement.style.cssText = `
-        width: 400px;
-        height: 250px;
-        border-radius: 20px;
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 50%, #f093fb 100%);
-        color: white;
-        position: relative;
-        box-sizing: border-box;
-      `;
-
-      // Add background effect
-      const bgEffect = document.createElement('div');
-      bgEffect.style.cssText = `
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
-        pointer-events: none;
-      `;
-      backElement.appendChild(bgEffect);
-
-      // Add back content
-      backElement.innerHTML += `
-        <div style="text-align: center; margin-bottom: 20px; position: relative; z-index: 2;">
-          <div style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; margin: 0 auto 10px;">
-            <svg width="30" height="30" fill="white" viewBox="0 0 1024 1024">
-              <path d="M866.9 169.9L527.1 54.1C523 52.7 517.5 52 512 52s-11 .7-15.1 2.1L157.1 169.9c-8.3 2.8-15.1 12.4-15.1 21.2v482.4c0 8.8 5.7 20.4 12.6 25.9L499.3 968c3.5 2.7 8 4.1 12.6 4.1s9.2-1.4 12.6-4.1l344.7-268.6c6.9-5.4 12.6-17 12.6-25.9V191.1c.2-8.8-6.6-18.3-14.9-21.2zM810 654.3L512 886.5 214 654.3V226.7l298-101.6 298 101.6v427.6z"/>
-              <path d="M402.9 528.8l-77.5 77.5c-3.1 3.1-3.1 8.2 0 11.3l34.4 34.4c3.1 3.1 8.2 3.1 11.3 0L512 511.2l140.9 140.8c3.1 3.1 8.2 3.1 11.3 0l34.4-34.4c3.1-3.1 3.1-8.2 0-11.3L621.1 528.8c31.1-26.4 50.9-65.8 50.9-109.8 0-79.5-64.5-144-144-144s-144 64.5-144 144c0 44 19.8 83.4 50.9 109.8zM528 339c41.8 0 76 34.2 76 76s-34.2 76-76 76-76-34.2-76-76 34.2-76 76-76z"/>
-            </svg>
-          </div>
-          <h3 style="color: white; margin: 0; font-size: 20px; font-weight: 700; margin-bottom: 5px;">Health Care Finance</h3>
-          <p style="color: rgba(255, 255, 255, 0.9); font-size: 12px; margin: 0;">Premium Healthcare Solutions</p>
-        </div>
-        
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 16px; position: relative; z-index: 2;">
-          <div style="text-align: center; padding: 16px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2);">
-            <div style="margin-bottom: 12px;">
-              <svg width="18" height="18" fill="white" viewBox="0 0 1024 1024" style="margin-right: 8px;">
-                <path d="M877.1 238.7L770.6 132.3c-13-13-30.4-20.3-48.8-20.3s-35.8 7.2-48.8 20.3L558.3 246.8c-13 13-20.3 30.5-20.3 48.8 0 18.3 7.2 35.8 20.3 48.8l106.4 106.4c13 13 30.4 20.3 48.8 20.3 18.3 0 35.8-7.2 48.8-20.3L877 336.3c13-13 20.3-30.5 20.3-48.8-.1-18.3-7.3-35.8-20.2-48.8z"/>
-              </svg>
-              <span style="color: white; font-size: 14px; font-weight: 600;">8445933072</span>
-            </div>
-            <div>
-              <span style="color: white; font-size: 13px;">healthcarefinance15@gmail.com</span>
-            </div>
-          </div>
-          
-          <div style="text-align: center; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-            <span style="color: rgba(255, 255, 255, 0.8); font-size: 11px;">24/7 Customer Support Available</span>
-          </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: auto; position: relative; z-index: 2;">
-          <span style="color: rgba(255, 255, 255, 0.7); font-size: 10px;">Authorized Healthcare Provider</span>
-        </div>
-      `;
-
-      tempContainer.appendChild(backElement);
-
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Capture back side
-      const backCanvas = await html2canvas(backElement, {
-        scale: 3,
-        backgroundColor: null,
+      // Capture back card clone
+      const backCanvas = await html2canvas(pdfBackRef.current, {
+        scale: 4,
         useCORS: true,
         allowTaint: true,
+        backgroundColor: null,
         width: 400,
         height: 250
       });
 
-      // Clean up temporary element
-      document.body.removeChild(tempContainer);
-
-      // Add back side to PDF
-      const backImgData = backCanvas.toDataURL('image/png');
-      pdf.addImage(backImgData, 'PNG', 0, 0, 85.6, 53.98);
-
-      // Download PDF
-      pdf.save(`${user.fullName}_Health_Card.pdf`);
+      pdf.addImage(backCanvas.toDataURL('image/png', 1.0), 'PNG', 0, 0, 85.6, 53.98);
       
+      pdf.save(`${user.fullName}_Health_Card.pdf`);
       message.destroy();
-      message.success('PDF downloaded successfully!');
+      message.success('High-quality PDF downloaded!');
     } catch (error) {
-      console.error('Error generating PDF:', error);
       message.destroy();
       message.error('Failed to generate PDF');
     } finally {
@@ -368,11 +279,7 @@ const ModernIdentityCard = ({ user, onUserUpdate }) => {
         {/* Back Side */}
         <div ref={backCardRef} style={backStyle}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '60px', height: '60px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', margin: '0 auto 10px' }}>
-              <SafetyCertificateOutlined style={{ fontSize: '30px', color: 'white' }} />
-            </div>
-            <Title level={3} style={{ color: 'white', margin: 0, fontSize: '20px', fontWeight: 700, marginBottom: '5px' }}>Health Care Finance</Title>
-            <Text style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px' }}>Premium Healthcare Solutions</Text>
+            <img src={backgroundImage} alt="Logo" style={{ width: '120px', height: 'auto', margin: '0 auto 10px', display: 'block', objectFit: 'contain', borderRadius: '12px' }} />
           </div>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '16px' }}>
@@ -533,6 +440,16 @@ const ModernIdentityCard = ({ user, onUserUpdate }) => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Hidden PDF Card Clones */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '0' }}>
+        <div ref={pdfFrontRef}>
+          <PDFCardClone user={user} isBack={false} />
+        </div>
+        <div ref={pdfBackRef}>
+          <PDFCardClone user={user} isBack={true} />
+        </div>
+      </div>
     </div>
   );
 };
