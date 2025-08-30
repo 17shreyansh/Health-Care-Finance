@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Upload, App, Select } from 'antd';
-import { UserOutlined, PhoneOutlined, UploadOutlined, IdcardOutlined, LockOutlined, CrownOutlined, TeamOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Upload, App } from 'antd';
+import { UserOutlined, PhoneOutlined, UploadOutlined, IdcardOutlined, LockOutlined } from '@ant-design/icons';
 import { authAPI } from '../services/api';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import PaymentQR from '../components/PaymentQR';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const { Title } = Typography;
 
@@ -11,7 +10,6 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState([]);
-  const [selectedRole, setSelectedRole] = useState('user');
   const [referralEmployee, setReferralEmployee] = useState(null);
   const [paymentSettings, setPaymentSettings] = useState(null);
   const [searchParams] = useSearchParams();
@@ -68,25 +66,20 @@ const Register = () => {
   };
 
   const onFinish = async (values) => {
-    if (selectedRole === 'user' && fileList.length === 0) {
+    if (fileList.length === 0) {
       message.error('Please upload a profile image');
       return;
     }
 
     setLoading(true);
     try {
-      let payload = { ...values, role: selectedRole };
-      
-      if (selectedRole === 'user' && fileList.length > 0) {
-        const base64Image = await compressImage(fileList[0].originFileObj);
-        payload.profileImage = base64Image;
-      }
+      const base64Image = await compressImage(fileList[0].originFileObj);
+      const payload = { ...values, role: 'user', profileImage: base64Image };
       
       const response = await authAPI.register(payload);
       message.success('Registration successful! Please login with your credentials.');
       form.resetFields();
       setFileList([]);
-      setSelectedRole('user');
       setTimeout(() => {
         navigate('/login');
       }, 1500);
@@ -133,77 +126,35 @@ const Register = () => {
         }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Title level={2} style={{ color: '#262626', fontWeight: 600, marginBottom: 8 }}>Create Account</Title>
-          <Typography.Text type="secondary" style={{ fontSize: '14px' }}>Register as Admin, Employee, or User</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: '14px' }}>Register for your health credit account</Typography.Text>
         </div>
         
         <Form form={form} onFinish={onFinish} layout="vertical">
           <Form.Item
-            name="role"
-            label="Registration Type"
-            rules={[{ required: true, message: 'Please select registration type!' }]}
-            initialValue="user"
+            name="fullName"
+            label="Full Name"
+            rules={[{ required: true, message: 'Please input your full name!' }]}
           >
-            <Select 
+            <Input 
+              prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Enter your full name" 
               size="large"
               style={{ borderRadius: '8px' }}
-              disabled={!!referralEmployee}
-              onChange={(value) => {
-                setSelectedRole(value);
-                form.resetFields(['name', 'fullName', 'fatherName', 'employeeId']);
-                setFileList([]);
-              }}
-              options={[
-                { value: 'admin', label: <><CrownOutlined /> Admin</>, icon: <CrownOutlined /> },
-                { value: 'employee', label: <><TeamOutlined /> Employee</>, icon: <TeamOutlined /> },
-                { value: 'user', label: <><UserOutlined /> User</>, icon: <UserOutlined /> }
-              ]}
             />
           </Form.Item>
 
-          {(selectedRole === 'admin' || selectedRole === 'employee') && (
-            <Form.Item
-              name="name"
-              label="Name"
-              rules={[{ required: true, message: 'Please input your name!' }]}
-            >
-              <Input 
-                prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
-                placeholder="Enter your name" 
-                size="large"
-                style={{ borderRadius: '8px' }}
-              />
-            </Form.Item>
-          )}
-
-          {selectedRole === 'user' && (
-            <>
-              <Form.Item
-                name="fullName"
-                label="Full Name"
-                rules={[{ required: true, message: 'Please input your full name!' }]}
-              >
-                <Input 
-                  prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
-                  placeholder="Enter your full name" 
-                  size="large"
-                  style={{ borderRadius: '8px' }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="fatherName"
-                label="Father's Name"
-                rules={[{ required: true, message: "Please input your father's name!" }]}
-              >
-                <Input 
-                  prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
-                  placeholder="Enter father's name" 
-                  size="large"
-                  style={{ borderRadius: '8px' }}
-                />
-              </Form.Item>
-            </>
-          )}
+          <Form.Item
+            name="fatherName"
+            label="Father's Name"
+            rules={[{ required: true, message: "Please input your father's name!" }]}
+          >
+            <Input 
+              prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Enter father's name" 
+              size="large"
+              style={{ borderRadius: '8px' }}
+            />
+          </Form.Item>
 
           <Form.Item
             name="mobileNumber"
@@ -225,25 +176,23 @@ const Register = () => {
 
 
 
-          {selectedRole === 'user' && (
-            <Form.Item
-              name="employeeId"
-              label={referralEmployee ? `Referred by: ${referralEmployee.name}` : "Employee ID (Referral Code)"}
-              rules={[
-                { required: true, message: 'Please input the employee ID!' },
-                { min: 3, message: 'Employee ID must be at least 3 characters!' }
-              ]}
-              extra={referralEmployee ? `Employee ID: ${referralEmployee.employeeId}` : "Use existing employee ID for referral"}
-            >
-              <Input 
-                prefix={<IdcardOutlined style={{ color: '#8c8c8c' }} />} 
-                placeholder="Enter employee ID" 
-                size="large"
-                style={{ borderRadius: '8px' }}
-                disabled={!!referralEmployee}
-              />
-            </Form.Item>
-          )}
+          <Form.Item
+            name="employeeId"
+            label={referralEmployee ? `Referred by: ${referralEmployee.name}` : "Employee ID (Referral Code)"}
+            rules={[
+              { required: true, message: 'Please input the employee ID!' },
+              { min: 3, message: 'Employee ID must be at least 3 characters!' }
+            ]}
+            extra={referralEmployee ? `Employee ID: ${referralEmployee.employeeId}` : "Use existing employee ID for referral"}
+          >
+            <Input 
+              prefix={<IdcardOutlined style={{ color: '#8c8c8c' }} />} 
+              placeholder="Enter employee ID" 
+              size="large"
+              style={{ borderRadius: '8px' }}
+              disabled={!!referralEmployee}
+            />
+          </Form.Item>
 
           <Form.Item
             name="password"
@@ -261,36 +210,34 @@ const Register = () => {
             />
           </Form.Item>
 
-          {selectedRole === 'user' && (
-            <Form.Item
-              label="Profile Image"
-              rules={[{ required: true, message: 'Please upload your profile image!' }]}
+          <Form.Item
+            label="Profile Image"
+            rules={[{ required: true, message: 'Please upload your profile image!' }]}
+          >
+            <Upload
+              listType="picture"
+              fileList={fileList}
+              onChange={handleUpload}
+              beforeUpload={beforeUpload}
+              maxCount={1}
+              customRequest={({ onSuccess }) => {
+                setTimeout(() => {
+                  onSuccess("ok");
+                }, 0);
+              }}
             >
-              <Upload
-                listType="picture"
-                fileList={fileList}
-                onChange={handleUpload}
-                beforeUpload={beforeUpload}
-                maxCount={1}
-                customRequest={({ onSuccess }) => {
-                  setTimeout(() => {
-                    onSuccess("ok");
-                  }, 0);
+              <Button 
+                icon={<UploadOutlined />} 
+                style={{ 
+                  borderRadius: '8px',
+                  border: '1px dashed #d9d9d9',
+                  color: '#595959'
                 }}
               >
-                <Button 
-                  icon={<UploadOutlined />} 
-                  style={{ 
-                    borderRadius: '8px',
-                    border: '1px dashed #d9d9d9',
-                    color: '#595959'
-                  }}
-                >
-                  Upload Profile Image
-                </Button>
-              </Upload>
-            </Form.Item>
-          )}
+                Upload Profile Image
+              </Button>
+            </Upload>
+          </Form.Item>
 
           <Form.Item>
             <Button 
@@ -326,7 +273,7 @@ const Register = () => {
         </div>
         </Card>
 
-        {selectedRole === 'user' && paymentSettings && (
+        {paymentSettings && (
           <Card style={{ 
             width: 320, 
             background: '#ffffff',

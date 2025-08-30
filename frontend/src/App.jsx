@@ -3,7 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ConfigProvider, App as AntdApp } from 'antd';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Home from './pages/Home';
 import Login from './pages/Login';
+import EmployeeLogin from './pages/EmployeeLogin';
+import AdminLogin from './pages/AdminLogin';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
@@ -24,7 +27,10 @@ const App = () => {
         <AuthProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/employee/login" element={<EmployeeLogin />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/register" element={<Register />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             
@@ -55,7 +61,7 @@ const App = () => {
               } 
             />
             
-            <Route path="/" element={<Navigate to="/login" replace />} />
+
           </Routes>
           </Router>
         </AuthProvider>

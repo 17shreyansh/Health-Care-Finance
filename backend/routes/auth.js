@@ -10,7 +10,7 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Login
+// Login (All roles)
 router.post('/login', [
   body('mobileNumber').matches(/^[0-9]{10}$/).withMessage('Please provide a valid 10-digit mobile number'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
@@ -55,11 +55,14 @@ router.post('/login', [
   }
 });
 
-// Register (Role-based)
+// Register (User only)
 router.post('/register', [
-  body('role').isIn(['admin', 'employee', 'user']).withMessage('Valid role is required'),
   body('mobileNumber').isMobilePhone().withMessage('Valid mobile number is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('fullName').notEmpty().withMessage('Full name is required'),
+  body('fatherName').notEmpty().withMessage('Father name is required'),
+  body('employeeId').notEmpty().withMessage('Employee ID is required'),
+  body('profileImage').notEmpty().withMessage('Profile image is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -67,7 +70,7 @@ router.post('/register', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { role, mobileNumber, password } = req.body;
+    const { mobileNumber, password, fullName, fatherName, employeeId, profileImage } = req.body;
 
     // Check if mobile number already exists across all models
     const existingUser = await Admin.findOne({ mobileNumber }) || 
@@ -77,63 +80,29 @@ router.post('/register', [
       return res.status(400).json({ message: 'Mobile number already registered' });
     }
 
-    let newUser;
-    let responseData = {};
-
-    if (role === 'admin') {
-      const { name } = req.body;
-      if (!name) {
-        return res.status(400).json({ message: 'Name is required for admin registration' });
-      }
-      
-      newUser = new Admin({ name, mobileNumber, password });
-      await newUser.save();
-      responseData = { id: newUser._id, name: newUser.name, role: newUser.role };
-      
-    } else if (role === 'employee') {
-      const { name } = req.body;
-      if (!name) {
-        return res.status(400).json({ message: 'Name is required for employee registration' });
-      }
-      
-      // Auto-generate employee ID
-      const employeeCount = await Employee.countDocuments();
-      const employeeId = `EMP${String(employeeCount + 1).padStart(3, '0')}`;
-      
-      newUser = new Employee({ name, mobileNumber, password, employeeId });
-      await newUser.save();
-      responseData = { id: newUser._id, name: newUser.name, employeeId: newUser.employeeId, role: newUser.role };
-      
-    } else if (role === 'user') {
-      const { fullName, fatherName, employeeId, profileImage } = req.body;
-      if (!fullName || !fatherName || !employeeId || !profileImage) {
-        return res.status(400).json({ message: 'Full name, father name, employee ID, and profile image are required for user registration' });
-      }
-      
-      // Verify employee exists
-      const employee = await Employee.findOne({ employeeId });
-      if (!employee) {
-        return res.status(400).json({ message: 'Invalid employee ID' });
-      }
-      
-      newUser = new User({ fullName, fatherName, mobileNumber, employeeId, password, profileImage });
-      await newUser.save();
-      
-      // Add to employee's referrals
-      employee.referrals.push(newUser._id);
-      await employee.save();
-      
-      responseData = {
-        id: newUser._id,
-        fullName: newUser.fullName,
-        fatherName: newUser.fatherName,
-        userId: newUser.userId,
-        profileImage: newUser.profileImage,
-        startDate: newUser.startDate,
-        endDate: newUser.endDate,
-        role: newUser.role
-      };
+    // Verify employee exists
+    const employee = await Employee.findOne({ employeeId });
+    if (!employee) {
+      return res.status(400).json({ message: 'Invalid employee ID' });
     }
+    
+    const newUser = new User({ fullName, fatherName, mobileNumber, employeeId, password, profileImage, role: 'user' });
+    await newUser.save();
+    
+    // Add to employee's referrals
+    employee.referrals.push(newUser._id);
+    await employee.save();
+    
+    const responseData = {
+      id: newUser._id,
+      fullName: newUser.fullName,
+      fatherName: newUser.fatherName,
+      userId: newUser.userId,
+      profileImage: newUser.profileImage,
+      startDate: newUser.startDate,
+      endDate: newUser.endDate,
+      role: newUser.role
+    };
 
     res.status(201).json({
       message: 'Registration successful',

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, App } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { TeamOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 
-const Login = () => {
+const EmployeeLogin = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -16,12 +16,12 @@ const Login = () => {
     setLoading(true);
     try {
       const response = await login(values);
-      if (response.user.role !== 'user') {
-        message.error('Access denied. This login is for users only.');
+      if (response.user.role !== 'employee') {
+        message.error('Access denied. This login is for employees only.');
         return;
       }
       message.success('Login successful!');
-      navigate('/user');
+      navigate('/employee');
     } catch (error) {
       message.error(error.response?.data?.message || 'Login failed');
     } finally {
@@ -46,8 +46,8 @@ const Login = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={2} style={{ color: '#262626', fontWeight: 600, marginBottom: 8 }}>User Login</Title>
-          <Typography.Text type="secondary" style={{ fontSize: '14px' }}>Sign in to your health credit account</Typography.Text>
+          <Title level={2} style={{ color: '#262626', fontWeight: 600, marginBottom: 8 }}>Employee Login</Title>
+          <Typography.Text type="secondary" style={{ fontSize: '14px' }}>Sign in to your employee dashboard</Typography.Text>
         </div>
         
         <Form onFinish={onFinish} layout="vertical">
@@ -59,7 +59,7 @@ const Login = () => {
             ]}
           >
             <Input 
-              prefix={<UserOutlined style={{ color: '#8c8c8c' }} />} 
+              prefix={<TeamOutlined style={{ color: '#8c8c8c' }} />} 
               placeholder="Enter your mobile number" 
               size="large"
               maxLength={10}
@@ -88,8 +88,8 @@ const Login = () => {
               block
               style={{
                 borderRadius: '8px',
-                background: '#1890ff',
-                borderColor: '#1890ff',
+                background: '#52c41a',
+                borderColor: '#52c41a',
                 height: '44px',
                 fontWeight: 500
               }}
@@ -98,22 +98,9 @@ const Login = () => {
             </Button>
           </Form.Item>
         </Form>
-
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Typography.Text type="secondary" style={{ fontSize: '14px' }}>
-            Don't have an account?{' '}
-            <Button 
-              type="link" 
-              onClick={() => navigate('/register')}
-              style={{ padding: 0, fontSize: '14px', fontWeight: 500 }}
-            >
-              Create account
-            </Button>
-          </Typography.Text>
-        </div>
       </Card>
     </div>
   );
 };
 
-export default Login;
+export default EmployeeLogin;
